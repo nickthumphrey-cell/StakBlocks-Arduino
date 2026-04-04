@@ -20,6 +20,7 @@
 #include <PID_v1.h> // import PID library
 #include "MAX6675.h" // import MAX6675 library
 #include <LiquidCrystal.h> // import library for the lcd display
+#include <Keypad.h> // import library for the keypad
 
 
 // Define PID pins
@@ -32,13 +33,6 @@ const int dataPin   = 50;
 const int clockPin  = 52;
 const int selectPin = 49;
 
-/*****  DONT NEED RIGHT NOW
-// 4 Digit Display pin definition                              CHANGE PINS, MAKE SURE PIN PLACEMENT MATCHES THE CORRECT SEGMENTS
-const uint8_t segmentPins[] = { 4, 6, 3, 10, 9, 2, 5, 13 }; // Pins to determine which segments in each digit are lit
-const uint8_t digitSelectionPins[] = { 12, 11, 8, 7 }; // Pins to determine which digit is displaying
-Simple5641AS component( segmentPins, digitSelectionPins );
-*****/
-
 // LCD: initialize the library by associating any needed LCD interface pin
 // with the arduino pin number it is connected to
 const int rs = 29, en = 28, d4 = 27, d5 = 26, d6 = 25, d7 = 24;
@@ -46,10 +40,23 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 unsigned long lastUpdate = 0; // create a variable to run the lcd incrementally
 
 
+// Set up the keypad and define the pins
+const byte ROWS = 4; //four rows
+const byte COLS = 4; //four columns
+//define the cymbols on the buttons of the keypads
+char hexaKeys[ROWS][COLS] = {
+  {'0','1','2','3'},
+  {'4','5','6','7'},
+  {'8','9','A','B'},
+  {'C','D','E','F'}
+};
+byte rowPins[ROWS] = {3, 2, 1, 0}; //connect to the row pinouts of the keypad                   CHANGE
+byte colPins[COLS] = {7, 6, 5, 4}; //connect to the column pinouts of the keypad
+
+
+
 //PID Define Variables we'll be connecting to
 double Setpoint, Input, Output;
-
-
 
 //PID Specify the links and initial tuning parameters
 double Kp=8, Ki=0.1, Kd=0.1;                                // CHANGE TO TUNE PID
@@ -58,10 +65,14 @@ PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
 int WindowSize = 5000; // set the relay pid output to run every 5000 ms
 unsigned long windowStartTime;
 
+
+
 // Initialize the MAX6675
 MAX6675 thermoCouple(selectPin, dataPin, clockPin);
 
 
+// Initialize an instance of class NewKeypad
+Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
 
 void setup()  // SETUP LOOP
 {
